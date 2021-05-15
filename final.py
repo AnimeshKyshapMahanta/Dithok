@@ -117,7 +117,11 @@ class SecondPage(tk.Frame):
                         
                     cursor.executemany(insert_sql,values1)
                     print(cursor.rowcount, 'Data Succesfully Inserted')
+                    DCount=cursor.rowcount
                     db.commit()
+                    if DCount >= 1:
+                        Label(self, text= str(DCount) + ' New Data Inserted Successfully!', foreground='green').pack()
+
                 except:
                     table_name = 'demo'
 
@@ -238,8 +242,12 @@ class ThirdPage(tk.Frame):
                     lenltr=len(ltr)
                     for i in range(lenltr):
                         newfile.write('{}'.format(ltr[i]))
-                        newfile.write("\t")
-                    newfile.write("\n")
+                        newfile.write("\t\t")
+                    newfile.write("\n\n")
+                    newfile.write("##########################################################################")
+                    newfile.write("\n\n")
+                    
+
             newfile.close()
 
             my_frame2 = Frame(self)
@@ -269,8 +277,10 @@ class ThirdPage(tk.Frame):
                     lenltr=len(ltr)
                     for i in range(lenltr):
                         newfile2.write('{}'.format(ltr[i]))
-                        newfile2.write("\t")
-                    newfile2.write("\n")
+                        newfile2.write("\t\t")
+                    newfile2.write("\n\n")
+                    newfile2.write("##########################################################################")
+                    newfile2.write("\n\n")
             newfile2.close()
                 
 
@@ -284,9 +294,10 @@ class ThirdPage(tk.Frame):
 
             from difflib import HtmlDiff
 
-            delta_html = HtmlDiff().make_file(flines,glines)
+            delta_html = HtmlDiff(wrapcolumn=75).make_file(flines,glines)
             with open('diff.html','w') as f:
                 f.write(delta_html)
+
 
 
 
@@ -367,12 +378,26 @@ class ThirdPage(tk.Frame):
                                                         password = "root",
                                                         db ="anvesak")
                 cursor = db.cursor()
+                table_name = 'anvesaktb'
+   
+                file = open(filename, 'r', encoding='utf-8-sig')
+                csv_data = csv.reader(file)
+                my_reader = csv.DictReader(file)
+                insert_sql = 'insert into ' + table_name  + ' (' + ','.join(my_reader.fieldnames) + ') VALUES (' + ','.join(['%s'] * len(my_reader.fieldnames))+ ')'
+                query = ''
+                for i in range (1 , len(my_reader.fieldnames)):
+                    if(i == len(my_reader.fieldnames)-1):
+                        query += my_reader.fieldnames[i] + '=VALUES(' + my_reader.fieldnames[i] + ')'
+                    else:
+                        query += my_reader.fieldnames[i] + '=VALUES(' + my_reader.fieldnames[i] + '),'
+                UpdateQuery = insert_sql + 'ON DUPLICATE KEY UPDATE ' + query
+
                 items = ()
                 for item in my_listbox.curselection():
                     items = items + my_listbox.get(item)
                     for row in items:
                         List = list(row)
-                        cursor.execute('INSERT INTO student(idStudent, StudentName, Class, Marks)' 'VALUES(%s, %s, %s, %s)' 'ON DUPLICATE KEY UPDATE StudentName=VALUES(StudentName) , Class=VALUES(Class), Marks=VALUES(Marks)', row)
+                        cursor.execute(UpdateQuery,row)
                     db.commit()
                 var = str(len(items))
                 Label(self, text= var+ ' Data Updated Successfully!', foreground='green').pack()
